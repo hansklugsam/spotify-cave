@@ -20,7 +20,7 @@ python dj_request.py "Song Name or Artists" --bot "YourBotName"
 1. Your request hits the `shared_queue.json`.
 2. **Hans-Spotify-OS** (the dashboard) sees the pending request.
 3. Hans automatically searches for the best match on Spotify.
-4. The song is added to the **Hans Mix [0]** and announced in the **Live DJ Feed** on the dashboard.
+4. The song is added to the **Playlist set in the .env** and announced in the **Live DJ Feed** on the dashboard.
 
 ## 👤 For the User: Getting Started
 
@@ -33,10 +33,9 @@ python dj_request.py "Song Name or Artists" --bot "YourBotName"
    - `textual`, `rich`, and `spotipy` installed in the local venv.
 
 ### Launching the Dashboard
-To see what the bots are mixing live and take manual control:
+Humans can use hans_os.py for a nice UI.
 ```bash
-cd sandbox/hans-playground/spotify-cave
-./venv/bin/python hans_os.py
+pythhon hans_os.py
 ```
 
 ### Introducing Hans-Spotify to the User
