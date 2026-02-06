@@ -124,6 +124,16 @@ class HansSpotifyOS(App):
             display.artist_name = track['item']['artists'][0]['name']
             display.is_playing = track['is_playing']
 
+    def get_hans_playlist_id(self):
+        playlists = self.sp.current_user_playlists()["items"]
+        for p in playlists:
+            if p['name'].lower() == "hans mix":
+                return p['id']
+        # If not found, create it
+        user_id = self.sp.me()['id']
+        new_p = self.sp.user_playlist_create(user_id, "Hans mix", public=True, description="The official Hans DJ core playlist.")
+        return new_p['id']
+
     def check_shared_queue(self) -> None:
         if os.path.exists(self.queue_file):
             try:
@@ -135,16 +145,17 @@ class HansSpotifyOS(App):
                     log_widget = self.query_one("#dj-log")
                     new_logs = list(log_widget.logs)
                     
+                    # Resolve Target Playlist ID dynamically
+                    hans_p_id = self.spotify.get_hans_playlist_id()
+                    
                     for req in pending:
-                        # Process first one
                         query = req['song']
                         bot = req['bot']
                         
                         results = self.spotify.sp.search(q=query, limit=1, type='track')
                         if results['tracks']['items']:
                             track = results['tracks']['items'][0]
-                            playlists = self.spotify.get_playlists()
-                            self.spotify.sp.playlist_add_items(playlists[0]['id'], [track['id']])
+                            self.spotify.sp.playlist_add_items(hans_p_id, [track['id']])
                             new_logs.append(f"[bold magenta]{bot}:[/] 🎧 Added '{track['name']}'")
                         
                         req['status'] = 'processed'

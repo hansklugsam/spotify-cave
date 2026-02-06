@@ -30,6 +30,16 @@ def get_spotify():
     )
     return spotipy.Spotify(auth_manager=auth_manager)
 
+def get_hans_playlist_id(sp):
+    playlists = sp.current_user_playlists()["items"]
+    for p in playlists:
+        if p['name'].lower() == "hans mix":
+            return p['id']
+    # If not found, create it
+    user_id = sp.me()['id']
+    new_p = sp.user_playlist_create(user_id, "Hans mix", public=True, description="The official Hans DJ core playlist.")
+    return new_p['id']
+
 def main():
     if not client_secret:
         print("Error: SPOTIPY_CLIENT_SECRET not set in environment or .env")
@@ -83,11 +93,10 @@ def main():
         results = sp.search(q=query, limit=1, type='track')
         if results['tracks']['items']:
             track = results['tracks']['items'][0]
-            playlists = sp.current_user_playlists()
-            playlist_id = playlists['items'][0]['id']
-            # FORCE ADD
+            # Resolve ID dynamically
+            playlist_id = get_hans_playlist_id(sp)
             sp.playlist_add_items(playlist_id, [track['id']])
-            print(f"✅ Executed: Added '{track['name']}' to {playlist_id}")
+            print(f"✅ Added '{track['name']}' to Hans Mix!")
         else:
             print("❌ No match found.")
 
