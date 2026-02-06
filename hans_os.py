@@ -5,9 +5,6 @@ from textual.reactive import reactive
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import os
-import sys
-import threading
-import time
 
 class SpotifyClient:
     def __init__(self):
@@ -21,8 +18,8 @@ class SpotifyClient:
                         os.environ["SPOTIPY_CLIENT_SECRET"] = val
                         break
         
-        self.client_id = "969e1e690f344ecfa5cd51b453d2592c"
-        self.redirect_uri = "http://localhost:8080/callback"
+        self.client_id = os.environ.get("SPOTIPY_CLIENT_ID", "")
+        self.redirect_uri = os.environ.get("SPOTIPY_REDIRECT_URI", "http://localhost:8080/callback")
         self.scope = "playlist-modify-public playlist-modify-private playlist-read-private user-library-read user-modify-playback-state user-read-playback-state"
         
         cache_path = os.path.join(os.path.dirname(__file__), ".cache")
@@ -124,14 +121,16 @@ class HansSpotifyOS(App):
             display.artist_name = track['item']['artists'][0]['name']
             display.is_playing = track['is_playing']
 
-    def get_hans_playlist_id(self):
+    def get_target_playlist_id(self):
+        # Look for TARGET_PLAYLIST_NAME in env, default to "Hans mix"
+        target_name = os.environ.get("TARGET_PLAYLIST_NAME", "Hans mix")
         playlists = self.sp.current_user_playlists()["items"]
         for p in playlists:
-            if p['name'].lower() == "hans mix":
+            if p['name'].lower() == target_name.lower():
                 return p['id']
         # If not found, create it
         user_id = self.sp.me()['id']
-        new_p = self.sp.user_playlist_create(user_id, "Hans mix", public=True, description="The official Hans DJ core playlist.")
+        new_p = self.sp.user_playlist_create(user_id, target_name, public=True, description=f"The official {target_name} DJ core.")
         return new_p['id']
 
     def check_shared_queue(self) -> None:
@@ -145,8 +144,8 @@ class HansSpotifyOS(App):
                     log_widget = self.query_one("#dj-log")
                     new_logs = list(log_widget.logs)
                     
-                    # Resolve Target Playlist ID dynamically
-                    hans_p_id = self.spotify.get_hans_playlist_id()
+                    # Resolve Target Playlist ID dynamically from .env
+                    target_p_id = self.spotify.get_target_playlist_id()
                     
                     for req in pending:
                         query = req['song']
@@ -155,7 +154,7 @@ class HansSpotifyOS(App):
                         results = self.spotify.sp.search(q=query, limit=1, type='track')
                         if results['tracks']['items']:
                             track = results['tracks']['items'][0]
-                            self.spotify.sp.playlist_add_items(hans_p_id, [track['id']])
+                            self.spotify.sp.playlist_add_items(target_p_id, [track['id']])
                             new_logs.append(f"[bold magenta]{bot}:[/] 🎧 Added '{track['name']}'")
                         
                         req['status'] = 'processed'

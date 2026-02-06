@@ -30,14 +30,16 @@ def get_spotify():
     )
     return spotipy.Spotify(auth_manager=auth_manager)
 
-def get_hans_playlist_id(sp):
+def get_target_playlist_id(sp):
+    # Dynamic target from .env
+    target_name = os.environ.get("TARGET_PLAYLIST_NAME", "Hans mix")
     playlists = sp.current_user_playlists()["items"]
     for p in playlists:
-        if p['name'].lower() == "hans mix":
+        if p['name'].lower() == target_name.lower():
             return p['id']
-    # If not found, create it
+    # Create if missing
     user_id = sp.me()['id']
-    new_p = sp.user_playlist_create(user_id, "Hans mix", public=True, description="The official Hans DJ core playlist.")
+    new_p = sp.user_playlist_create(user_id, target_name, public=True, description=f"The official {target_name} DJ core.")
     return new_p['id']
 
 def main():
@@ -93,10 +95,10 @@ def main():
         results = sp.search(q=query, limit=1, type='track')
         if results['tracks']['items']:
             track = results['tracks']['items'][0]
-            # Resolve ID dynamically
-            playlist_id = get_hans_playlist_id(sp)
+            # Resolve target dynamically from .env
+            playlist_id = get_target_playlist_id(sp)
             sp.playlist_add_items(playlist_id, [track['id']])
-            print(f"✅ Added '{track['name']}' to Hans Mix!")
+            print(f"✅ Added '{track['name']}' to targeting playlist!")
         else:
             print("❌ No match found.")
 
