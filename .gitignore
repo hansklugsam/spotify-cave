@@ -1,0 +1,5 @@
+venv/
+.env
+.cache
+secret.env
+shared_queue.json
